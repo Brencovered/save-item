@@ -13,15 +13,12 @@ interface SavedItemsViewProps {
   onToggleSmsAlerts: () => void;
 }
 
-function computeStats(history: PricePoint[]) {
-  const prices = history.map((p) => p.price);
-  const lowest = Math.min(...prices);
-  const highest = Math.max(...prices);
-  const median = prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)];
-  return { lowest, highest, median };
-}
-
-function predictNextDrop(history: PricePoint[], currentPrice: number): string {
+/**
+ * Predict when the next price change is likely, assuming:
+ * - price changes roughly every 1–2 weeks
+ * - households typically shop weekly
+ */
+function predictNextChange(history: PricePoint[], currentPrice: number): string {
   if (history.length < 2) {
     return 'Not enough history yet to estimate a change.';
   }
@@ -30,17 +27,15 @@ function predictNextDrop(history: PricePoint[], currentPrice: number): string {
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  // Compute gaps only when the price actually changed
+  // gaps only where the price actually changed
   const gaps: number[] = [];
   let lastChangeIndex = 0;
 
   for (let i = 1; i < sorted.length; i++) {
     if (sorted[i].price !== sorted[i - 1].price) {
-      const prevChangeDate =
-        new Date(sorted[lastChangeIndex].date).getTime();
-      const thisChangeDate = new Date(sorted[i].date).getTime();
-      const days =
-        (thisChangeDate - prevChangeDate) / (1000 * 60 * 60 * 24);
+      const prevChange = new Date(sorted[lastChangeIndex].date).getTime();
+      const thisChange = new Date(sorted[i].date).getTime();
+      const days = (thisChange - prevChange) / (1000 * 60 * 60 * 24);
       gaps.push(days);
       lastChangeIndex = i;
     }
@@ -50,32 +45,32 @@ function predictNextDrop(history: PricePoint[], currentPrice: number): string {
     return 'Price has been stable so far; no change pattern yet.';
   }
 
-  const avgGap =
-    gaps.reduce((sum, d) => sum + d, 0) / gaps.length;
+  const rawAvgGap = gaps.reduce((sum, d) => sum + d, 0) / gaps.length;
+
+  // clamp to a realistic 1–2 week cadence
+  const clampedGap = Math.min(14, Math.max(7, rawAvgGap));
+  const days = Math.round(clampedGap);
 
   const lastChangeDate = new Date(sorted[lastChangeIndex].date);
-  const estimateDate = new Date(lastChangeDate);
-  estimateDate.setDate(
-    estimateDate.getDate() + Math.round(avgGap)
-  );
+  const today = new Date();
+  const baseDate = today > lastChangeDate ? today : lastChangeDate;
 
-  // You can keep this simple, or hint direction based on median
-  const prices = sorted.map((p) => p.price);
-  const median =
-    prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)];
+  const estimateDate = new Date(baseDate);
+  estimateDate.setDate(baseDate.getDate() + days);
 
+  const shops = Math.max(1, Math.round(days / 7)); // number of weekly shops
+
+  // direction hint based on median
+  const prices = sorted.map((p) => p.price).sort((a, b) => a - b);
+  const median = prices[Math.floor(prices.length / 2)];
   let directionHint = '';
-  if (currentPrice > median) {
-    directionHint = ' (likely a drop)';
-  } else if (currentPrice < median) {
-    directionHint = ' (likely an increase)';
-  }
+  if (currentPrice > median) directionHint = ' (likely a drop)';
+  else if (currentPrice < median) directionHint = ' (likely an increase)';
 
-  return `Expected price change in ~${Math.round(
-    avgGap
-  )} days, around ${estimateDate.toLocaleDateString()}${directionHint}.`;
+  return `Expected price change in ~${days} days (about ${shops} weekly shop${
+    shops > 1 ? 's' : ''
+  }), around ${estimateDate.toLocaleDateString()}${directionHint}.`;
 }
-
 
 const SavedItemsView: React.FC<SavedItemsViewProps> = ({
   saved,
@@ -92,8 +87,8 @@ const SavedItemsView: React.FC<SavedItemsViewProps> = ({
     () =>
       saved.map((p) => {
         const prediction =
-          p.priceHistory && p.priceHistory.length
-            ? predictNextDrop(p.priceHistory, p.price)
+          p.priceHistory && p.priceHistory.length > 0
+            ? predictNextChange(p.priceHistory, p.price)
             : 'No price history yet.';
         return { product: p, prediction };
       }),
@@ -104,8 +99,8 @@ const SavedItemsView: React.FC<SavedItemsViewProps> = ({
     <div>
       <h2>Saved items</h2>
       <p className="text-muted">
-        These are the products you&apos;ve starred from Browse. We mock a simple
-        prediction of when they might drop in price based on recent changes.
+        These are the products you&apos;ve starred from Browse. We estimate when
+        the price is likely to move again, based on recent changes.
       </p>
 
       {saved.length === 0 ? (

@@ -5,13 +5,26 @@ interface ProductCardProps {
   product: Product;
   isSaved: boolean;
   onSaveToggle: (product: Product) => void;
+  quantity: number;
+  onQuantityChange: (delta: number) => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
   isSaved,
-  onSaveToggle
+  onSaveToggle,
+  quantity,
+  onQuantityChange
 }) => {
+  const handleMinus = () => {
+    if (quantity <= 0) return;
+    onQuantityChange(-1);
+  };
+
+  const handlePlus = () => {
+    onQuantityChange(1);
+  };
+
   return (
     <div className="card">
       <div className="card-image">
@@ -47,15 +60,29 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <div className="card-price">${product.price.toFixed(2)}</div>
           <div className="card-category">{product.category}</div>
         </div>
-        <button
-          className={
-            'save-button ' + (isSaved ? 'saved' : '')
-          }
-          onClick={() => onSaveToggle(product)}
-        >
-          {isSaved ? 'Saved' : 'Save'}
-        </button>
+
+        <div className="card-footer-right">
+          <button
+            className="qty-btn qty-minus"
+            onClick={handleMinus}
+            disabled={quantity <= 0}
+          >
+            –
+          </button>
+          <span className="qty-value">{quantity}</span>
+          <button className="qty-btn qty-plus" onClick={handlePlus}>
+            +
+          </button>
+        </div>
       </div>
+
+      <button
+        className={'save-button ' + (isSaved ? 'saved' : '')}
+        onClick={() => onSaveToggle(product)}
+        style={{ marginTop: 8, alignSelf: 'flex-end' }}
+      >
+        {isSaved ? 'Saved' : 'Save'}
+      </button>
     </div>
   );
 };

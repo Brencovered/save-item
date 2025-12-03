@@ -5,13 +5,17 @@ import ProductCard from './ProductCard';
 interface ProductGridProps {
   products: Product[];
   savedIds: number[];
+  quantities: Record<number, number>;
   onSaveToggle: (product: Product) => void;
+  onQuantityChange: (product: Product, delta: number) => void;
 }
 
 const ProductGrid: React.FC<ProductGridProps> = ({
   products,
   savedIds,
-  onSaveToggle
+  quantities,
+  onSaveToggle,
+  onQuantityChange
 }) => {
   return (
     <section>
@@ -25,6 +29,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({
             key={p.id}
             product={p}
             isSaved={savedIds.includes(p.id)}
+            quantity={quantities[p.id] ?? 0}
+            onQuantityChange={(delta) => onQuantityChange(p, delta)}
             onSaveToggle={onSaveToggle}
           />
         ))}

@@ -19,6 +19,10 @@ const App: React.FC = () => {
   const [alertsEmail, setAlertsEmail] = useState(true);
   const [alertsSms, setAlertsSms] = useState(false);
 
+  // cart quantities by product id
+  const [quantities, setQuantities] = useState<Record<number, number>>({});
+
+  // load saved from localStorage
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -31,6 +35,7 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // persist saved list
   useEffect(() => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
@@ -50,6 +55,14 @@ const App: React.FC = () => {
         savedAt: new Date().toISOString()
       };
       return [...current, now];
+    });
+  };
+
+  const handleQuantityChange = (product: Product, delta: number) => {
+    setQuantities((prev) => {
+      const current = prev[product.id] ?? 0;
+      const next = Math.max(0, current + delta);
+      return { ...prev, [product.id]: next };
     });
   };
 
@@ -80,7 +93,9 @@ const App: React.FC = () => {
             <ProductGrid
               products={filteredProducts}
               savedIds={savedIds}
+              quantities={quantities}
               onSaveToggle={onSaveToggle}
+              onQuantityChange={handleQuantityChange}
             />
           ) : (
             <SavedItemsView

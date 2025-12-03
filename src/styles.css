@@ -192,11 +192,43 @@ body {
   margin-top: 4px;
 }
 
-.card-footer {
+.card-footer-right {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
+  gap: 6px;
+}
+
+.qty-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.qty-minus {
+  background: #e5e7eb;
+  color: #9ca3af;
+}
+
+.qty-plus {
+  background: var(--green);
+  color: white;
+}
+
+.qty-minus:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.qty-value {
+  min-width: 18px;
+  text-align: center;
+  font-weight: 600;
 }
 
 .card-price {

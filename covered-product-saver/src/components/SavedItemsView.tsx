@@ -1,3 +1,5 @@
+// src/components/SavedItemsView.tsx
+
 import React, { useMemo, useState } from 'react';
 import { PricePoint, SavedProduct } from '../types';
 
@@ -15,8 +17,8 @@ interface SavedItemsViewProps {
 
 /**
  * Analyse price history and return:
- * - a prediction line for the list
- * - a plain-English explanation we can show when user clicks "History"
+ *  - a prediction sentence
+ *  - a plain-English explanation for the “History” view
  */
 function analysePriceHistory(
   history: PricePoint[],
@@ -34,9 +36,11 @@ function analysePriceHistory(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  // Gather only points where the price actually changed
+  // collect only actual price changes
   type ChangePoint = { date: Date; price: number };
-  const changes: ChangePoint[] = [{ date: new Date(sorted[0].date), price: sorted[0].price }];
+  const changes: ChangePoint[] = [
+    { date: new Date(sorted[0].date), price: sorted[0].price }
+  ];
 
   for (let i = 1; i < sorted.length; i++) {
     if (sorted[i].price !== sorted[i - 1].price) {
@@ -52,7 +56,7 @@ function analysePriceHistory(
     };
   }
 
-  // Gaps between changes in days
+  // gaps between changes in days
   const gaps: number[] = [];
   for (let i = 1; i < changes.length; i++) {
     const days =
@@ -63,7 +67,7 @@ function analysePriceHistory(
 
   const rawAvgGap = gaps.reduce((sum, d) => sum + d, 0) / gaps.length;
 
-  // Clamp to a realistic 1–2 week cadence
+  // clamp to a realistic 1–2 week cadence
   const clampedGap = Math.min(14, Math.max(7, rawAvgGap));
   const days = Math.round(clampedGap);
   const shops = Math.max(1, Math.round(days / 7)); // weekly shops
@@ -75,21 +79,23 @@ function analysePriceHistory(
   const estimateDate = new Date(baseDate);
   estimateDate.setDate(baseDate.getDate() + days);
 
-  // Direction hint from median
+  // direction hint from median price
   const allPrices = sorted.map((p) => p.price).sort((a, b) => a - b);
   const median = allPrices[Math.floor(allPrices.length / 2)];
   let directionHint = '';
   let directionWord = 'move';
 
   if (currentPrice > median) {
-    directionHint = ' – it’s a bit higher than its normal price, so we expect it to drop again';
+    directionHint =
+      ' – it’s a bit higher than its normal price, so we expect it to drop again';
     directionWord = 'drop';
   } else if (currentPrice < median) {
     directionHint =
       ' – it’s a bit lower than its normal price, so we expect it to move back up';
     directionWord = 'increase';
   } else {
-    directionHint = ' – it is close to its normal price, so a move up or down is likely';
+    directionHint =
+      ' – it is close to its normal price, so a move up or down is likely';
   }
 
   const prediction = `Expected price change in ~${days} days (about ${shops} weekly shop${
@@ -129,7 +135,7 @@ const SavedItemsView: React.FC<SavedItemsViewProps> = ({
   onToggleEmailAlerts,
   onToggleSmsAlerts
 }) => {
-  // which saved item has its "history" explanation open
+  // which saved item is currently showing its history explanation
   const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
 
   const itemsWithInfo = useMemo(
@@ -137,7 +143,7 @@ const SavedItemsView: React.FC<SavedItemsViewProps> = ({
       saved.map((p) => {
         if (p.priceHistory && p.priceHistory.length > 0) {
           const { prediction, explanation } = analysePriceHistory(
-            p.priceHistory,
+            p.priceHistory as PricePoint[],
             p.price
           );
           return { product: p, prediction, explanation };

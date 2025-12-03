@@ -1,7 +1,6 @@
 // src/components/SavedItemsView.tsx
-
 import React, { useMemo, useState } from 'react';
-import { PricePoint, SavedProduct } from '../../../src/types';
+import { SavedProduct, PricePoint } from '../types';
 
 interface SavedItemsViewProps {
   saved: SavedProduct[];
@@ -15,11 +14,55 @@ interface SavedItemsViewProps {
   onToggleSmsAlerts: () => void;
 }
 
-/**
- * Analyse price history and return:
- *  - a prediction sentence
- *  - a plain-English explanation for the “History” view
- */
+/** Tiny inline sparkline chart for history */
+const Sparkline: React.FC<{ history: PricePoint[] }> = ({ history }) => {
+  if (!history.length) return null;
+
+  const sorted = [...history].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  const prices = sorted.map((p) => p.price);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+
+  const width = 160;
+  const height = 40;
+  const n = sorted.length;
+  const stepX = n > 1 ? width / (n - 1) : 0;
+
+  const points = prices
+    .map((price, i) => {
+      const x = stepX * i;
+      let y: number;
+      if (max === min) {
+        y = height / 2;
+      } else {
+        const ratio = (price - min) / (max - min);
+        y = height - ratio * (height - 4) - 2;
+      }
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      className="sparkline"
+    >
+      <polyline
+        points={points}
+        fill="none"
+        stroke="#22c55e"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
 function analysePriceHistory(
   history: PricePoint[],
   currentPrice: number
@@ -28,7 +71,7 @@ function analysePriceHistory(
     return {
       prediction: 'Not enough history yet to estimate a change.',
       explanation:
-        'We need at least a couple of price moves to understand how often this product tends to change.'
+        'We only have a few data points so far, so there is no clear pattern yet.'
     };
   }
 
@@ -36,12 +79,10 @@ function analysePriceHistory(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  // collect only actual price changes
   type ChangePoint = { date: Date; price: number };
   const changes: ChangePoint[] = [
     { date: new Date(sorted[0].date), price: sorted[0].price }
   ];
-
   for (let i = 1; i < sorted.length; i++) {
     if (sorted[i].price !== sorted[i - 1].price) {
       changes.push({ date: new Date(sorted[i].date), price: sorted[i].price });
@@ -50,9 +91,9 @@ function analysePriceHistory(
 
   if (changes.length < 2) {
     return {
-      prediction: 'Price has been stable so far; no clear change pattern yet.',
+      prediction: 'Price has been mostly flat; no clear pattern yet.',
       explanation:
-        'So far this product has barely moved in price, so we can’t confidently estimate when it will change again.'
+        'The price hasn’t moved much across the dates we have, so we can’t reliably guess the next change.'
     };
   }
 
@@ -67,10 +108,10 @@ function analysePriceHistory(
 
   const rawAvgGap = gaps.reduce((sum, d) => sum + d, 0) / gaps.length;
 
-  // clamp to a realistic 1–2 week cadence
+  // clamp to 1–2 weeks
   const clampedGap = Math.min(14, Math.max(7, rawAvgGap));
   const days = Math.round(clampedGap);
-  const shops = Math.max(1, Math.round(days / 7)); // weekly shops
+  const shops = Math.max(1, Math.round(days / 7));
 
   const lastChange = changes[changes.length - 1];
   const today = new Date();
@@ -79,47 +120,23 @@ function analysePriceHistory(
   const estimateDate = new Date(baseDate);
   estimateDate.setDate(baseDate.getDate() + days);
 
-  // direction hint from median price
-  const allPrices = sorted.map((p) => p.price).sort((a, b) => a - b);
-  const median = allPrices[Math.floor(allPrices.length / 2)];
-  let directionHint = '';
-  let directionWord = 'move';
+  const prices = sorted.map((p) => p.price).sort((a, b) => a - b);
+  const median = prices[Math.floor(prices.length / 2)];
+  let extra = '';
 
   if (currentPrice > median) {
-    directionHint =
-      ' – it’s a bit higher than its normal price, so we expect it to drop again';
-    directionWord = 'drop';
+    extra = ' It’s a little higher than normal, so we expect a drop soon.';
   } else if (currentPrice < median) {
-    directionHint =
-      ' – it’s a bit lower than its normal price, so we expect it to move back up';
-    directionWord = 'increase';
-  } else {
-    directionHint =
-      ' – it is close to its normal price, so a move up or down is likely';
+    extra = ' It’s a little lower than normal, so we expect it to move back up.';
   }
 
   const prediction = `Expected price change in ~${days} days (about ${shops} weekly shop${
     shops > 1 ? 's' : ''
   }), around ${estimateDate.toLocaleDateString()}.`;
 
-  const windowStart = sorted[0].date;
-  const windowEnd = sorted[sorted.length - 1].date;
-  const totalDays =
-    (new Date(windowEnd).getTime() - new Date(windowStart).getTime()) /
-    (1000 * 60 * 60 * 24);
-  const totalWeeks = totalDays / 7;
-
-  const explanation = `We’ve seen ${changes.length} price changes over roughly ${totalWeeks.toFixed(
-    1
-  )} weeks, with an average gap of about ${rawAvgGap.toFixed(
-    1
-  )} days between changes. The last ${directionWord} was on ${lastChange.date.toLocaleDateString()}, when the price moved to $${lastChange.price.toFixed(
-    2
-  )}. Because the current price is $${currentPrice.toFixed(
-    2
-  )} and the typical (median) price is about $${median.toFixed(
-    2
-  )}${directionHint}, we’re estimating the next move in about ${days} days.`;
+  const explanation = `This product usually changes price every ~${Math.round(
+    rawAvgGap
+  )} days. The last change was on ${lastChange.date.toLocaleDateString()}, so we expect the next move around ${estimateDate.toLocaleDateString()}.${extra}`;
 
   return { prediction, explanation };
 }
@@ -135,7 +152,6 @@ const SavedItemsView: React.FC<SavedItemsViewProps> = ({
   onToggleEmailAlerts,
   onToggleSmsAlerts
 }) => {
-  // which saved item is currently showing its history explanation
   const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
 
   const itemsWithInfo = useMemo(
@@ -143,7 +159,7 @@ const SavedItemsView: React.FC<SavedItemsViewProps> = ({
       saved.map((p) => {
         if (p.priceHistory && p.priceHistory.length > 0) {
           const { prediction, explanation } = analysePriceHistory(
-            p.priceHistory as PricePoint[],
+            p.priceHistory,
             p.price
           );
           return { product: p, prediction, explanation };
@@ -152,7 +168,7 @@ const SavedItemsView: React.FC<SavedItemsViewProps> = ({
           product: p,
           prediction: 'No price history yet.',
           explanation:
-            'We haven’t collected enough historical prices for this item to explain a pattern yet.'
+            'We haven’t collected enough historical prices for this item yet.'
         };
       }),
     [saved]
@@ -163,8 +179,8 @@ const SavedItemsView: React.FC<SavedItemsViewProps> = ({
       <h2>Saved items</h2>
       <p className="text-muted">
         These are the products you&apos;ve starred from Browse. We estimate when
-        the price is likely to move again, based on how often it has changed in
-        the past.
+        the price is likely to move again based on how it&apos;s changed in the
+        past.
       </p>
 
       {saved.length === 0 ? (
@@ -172,47 +188,69 @@ const SavedItemsView: React.FC<SavedItemsViewProps> = ({
           <strong>No saved products yet.</strong>
           <p>
             Go back to <strong>Browse</strong> and hit <em>Save</em> on any
-            product you want to watch. They&apos;ll appear here with predictions
-            and alert settings.
+            product you want to watch.
           </p>
         </div>
       ) : (
         <div className="saved-list">
-          {itemsWithInfo.map(({ product, prediction, explanation }) => (
-            <div key={product.id} className="saved-item">
-              <div className="saved-item-main">
-                <span className="saved-item-name">{product.name}</span>
-                <span className="saved-item-meta">
-                  {product.size} • ${product.price.toFixed(2)}{' '}
-                  <span className="chip">
-                    Saved {new Date(product.savedAt).toLocaleDateString()}
+          {itemsWithInfo.map(({ product, prediction, explanation }) => {
+            const history = (product.priceHistory || []) as PricePoint[];
+            const sortedHistory = [...history].sort(
+              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
+
+            return (
+              <div key={product.id} className="saved-item">
+                <div className="saved-item-main">
+                  <span className="saved-item-name">{product.name}</span>
+                  <span className="saved-item-meta">
+                    {product.size} • ${product.price.toFixed(2)}{' '}
+                    <span className="chip">
+                      Saved {new Date(product.savedAt).toLocaleDateString()}
+                    </span>
                   </span>
-                </span>
-                <span className="saved-item-meta">{prediction}</span>
+                  <span className="saved-item-meta">{prediction}</span>
 
-                {openHistoryId === product.id && (
-                  <div className="saved-item-explanation">
-                    {explanation}
-                  </div>
-                )}
-              </div>
+                  {openHistoryId === product.id && (
+                    <div className="saved-item-history">
+                      <p className="saved-item-explanation">{explanation}</p>
 
-              <div className="saved-item-actions">
-                <button
-                  className="history-button"
-                  type="button"
-                  onClick={() =>
-                    setOpenHistoryId(
-                      openHistoryId === product.id ? null : product.id
-                    )
-                  }
-                >
-                  History
-                </button>
-                <span className="badge">Watching for price drops</span>
+                      {history.length > 0 && (
+                        <>
+                          <Sparkline history={history} />
+                          <ul className="saved-item-history-list">
+                            {sortedHistory.map((h) => (
+                              <li key={h.date}>
+                                <span>
+                                  {new Date(h.date).toLocaleDateString()}
+                                </span>
+                                <span>${h.price.toFixed(2)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="saved-item-actions">
+                  <button
+                    type="button"
+                    className="history-button"
+                    onClick={() =>
+                      setOpenHistoryId(
+                        openHistoryId === product.id ? null : product.id
+                      )
+                    }
+                  >
+                    History
+                  </button>
+                  <span className="badge">Watching for price drops</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

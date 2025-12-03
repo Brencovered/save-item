@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import Sidebar from '../covered-product-saver/src/components/Sidebar';
-import Header from '../covered-product-saver/src/components/Header';
-import ProductGrid from '../covered-product-saver/src/components/ProductGrid';
-import SavedItemsView from '../covered-product-saver/src/components/SavedItemsView';
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+import ProductGrid from './components/ProductGrid';
+import SavedItemsView from './components/SavedItemsView';
 import { mockProducts } from './mockProducts';
-import { Product, SavedProduct } from './types';
-
-type Section = 'browse' | 'saved';
+import { Product, SavedProduct, Section } from './types';
 
 const STORAGE_KEY = 'covered-demo-saved-products';
 
@@ -18,6 +16,7 @@ const App: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [alertsEmail, setAlertsEmail] = useState(true);
   const [alertsSms, setAlertsSms] = useState(false);
+  const [quantities, setQuantities] = useState<Record<number, number>>({});
 
   useEffect(() => {
     try {
@@ -53,13 +52,21 @@ const App: React.FC = () => {
     });
   };
 
+  const handleQuantityChange = (product: Product, delta: number) => {
+    setQuantities((prev) => {
+      const current = prev[product.id] ?? 0;
+      const next = Math.max(0, current + delta);
+      return { ...prev, [product.id]: next };
+    });
+  };
+
   const filteredProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return mockProducts;
     return mockProducts.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q)
+        (p.category ?? '').toLowerCase().includes(q)
     );
   }, [search]);
 
@@ -81,16 +88,20 @@ const App: React.FC = () => {
               products={filteredProducts}
               savedIds={savedIds}
               onSaveToggle={onSaveToggle}
+              onQuantityChange={handleQuantityChange}
+              onShowHistory={() => {
+                // for now we don't show a modal, we only use history on Saved view
+              }}
             />
           ) : (
             <SavedItemsView
               saved={saved}
               email={email}
               phone={phone}
-              alertsEmail={alertsEmail}
-              alertsSms={alertsSms}
               onEmailChange={setEmail}
               onPhoneChange={setPhone}
+              alertsEmail={alertsEmail}
+              alertsSms={alertsSms}
               onToggleEmailAlerts={() => setAlertsEmail((v) => !v)}
               onToggleSmsAlerts={() => setAlertsSms((v) => !v)}
             />

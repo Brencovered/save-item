@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import ProductGrid from './components/ProductGrid';
 import SavedItemsView from './components/SavedItemsView';
+import PriceHistoryModal from './components/PriceHistoryModal';
 import { mockProducts } from './mockProducts';
 import { Product, SavedProduct } from './types';
 
@@ -18,11 +19,10 @@ const App: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [alertsEmail, setAlertsEmail] = useState(true);
   const [alertsSms, setAlertsSms] = useState(false);
-
-  // cart quantities by product id
   const [quantities, setQuantities] = useState<Record<number, number>>({});
 
-  // load saved from localStorage
+  const [historyProduct, setHistoryProduct] = useState<Product | null>(null);
+
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -35,7 +35,6 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // persist saved list
   useEffect(() => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
@@ -96,6 +95,7 @@ const App: React.FC = () => {
               quantities={quantities}
               onSaveToggle={onSaveToggle}
               onQuantityChange={handleQuantityChange}
+              onShowHistory={setHistoryProduct}
             />
           ) : (
             <SavedItemsView
@@ -112,6 +112,13 @@ const App: React.FC = () => {
           )}
         </main>
       </div>
+
+      {historyProduct && (
+        <PriceHistoryModal
+          product={historyProduct}
+          onClose={() => setHistoryProduct(null)}
+        />
+      )}
     </div>
   );
 };

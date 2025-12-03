@@ -6,7 +6,14 @@ export const mockProducts: Product[] = [
     name: "Abbott's Bakery Rustic White Bread Sandwich Slice Loaf",
     size: '700g',
     price: 5.2,
-    category: 'Bakery'
+    category: 'Bakery',
+    priceHistory: [
+      { date: '2025-10-14', price: 5.2 },
+      { date: '2025-10-21', price: 5.2 },
+      { date: '2025-11-10', price: 5.2 },
+      { date: '2025-11-12', price: 5.2 },
+      { date: '2025-11-26', price: 5.8 }
+    ]
   },
   {
     id: 2,
@@ -15,6 +22,9 @@ export const mockProducts: Product[] = [
     price: 5.2,
     category: 'Bakery'
   },
+  // ...rest unchanged
+
+
   {
     id: 3,
     name: "Abbott's Bakery Dark Rye Bread Sandwich Slice Loaf",

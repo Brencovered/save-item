@@ -7,6 +7,7 @@ interface ProductCardProps {
   onSaveToggle: (product: Product) => void;
   quantity: number;
   onQuantityChange: (delta: number) => void;
+  onShowHistory: (product: Product) => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -14,7 +15,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
   isSaved,
   onSaveToggle,
   quantity,
-  onQuantityChange
+  onQuantityChange,
+  onShowHistory
 }) => {
   const handleMinus = () => {
     if (quantity <= 0) return;
@@ -25,8 +27,38 @@ const ProductCard: React.FC<ProductCardProps> = ({
     onQuantityChange(1);
   };
 
+  const hasHistory = !!product.priceHistory && product.priceHistory.length > 0;
+
   return (
     <div className="card">
+      {/* tiny price history icon in top-right */}
+      {hasHistory && (
+        <button
+          className="price-history-icon"
+          type="button"
+          onClick={() => onShowHistory(product)}
+          aria-label="Show price history"
+        >
+          {/* simple little sparkline icon */}
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="11" fill="#10b981" />
+            <polyline
+              points="6 14 10 9 13 12 18 7"
+              fill="none"
+              stroke="white"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      )}
+
       <div className="card-image">
         {product.imageUrl ? (
           <img src={product.imageUrl} alt={product.name} />
@@ -55,7 +87,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       <div className="card-name">{product.name}</div>
       <div className="card-size">{product.size}</div>
 
-      {/* price + save in one row */}
+      {/* price + save row */}
       <div className="card-footer">
         <div>
           <div className="card-price">${product.price.toFixed(2)}</div>

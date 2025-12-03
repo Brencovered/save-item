@@ -8,6 +8,7 @@ interface ProductGridProps {
   quantities: Record<number, number>;
   onSaveToggle: (product: Product) => void;
   onQuantityChange: (product: Product, delta: number) => void;
+  onShowHistory: (product: Product) => void;
 }
 
 const ProductGrid: React.FC<ProductGridProps> = ({
@@ -15,7 +16,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   savedIds,
   quantities,
   onSaveToggle,
-  onQuantityChange
+  onQuantityChange,
+  onShowHistory
 }) => {
   return (
     <section>
@@ -32,6 +34,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
             quantity={quantities[p.id] ?? 0}
             onQuantityChange={(delta) => onQuantityChange(p, delta)}
             onSaveToggle={onSaveToggle}
+            onShowHistory={onShowHistory}
           />
         ))}
       </div>

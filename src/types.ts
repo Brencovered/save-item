@@ -1,6 +1,8 @@
+// src/types.ts
+
 export interface PricePoint {
-  date: string;   // ISO date string e.g. "2025-11-26"
-  price: number;  // price on that date
+  date: string;  // ISO date string: "2025-12-03"
+  price: number; // price on that date
 }
 
 export interface Product {
@@ -10,9 +12,9 @@ export interface Product {
   price: number;
   category: string;
   imageUrl?: string;
-  priceHistory?: PricePoint[];
+  priceHistory?: PricePoint[]; // <-- now strongly typed
 }
 
 export interface SavedProduct extends Product {
-  savedAt: string;
+  savedAt: string; // ISO date string for when the user saved it
 }

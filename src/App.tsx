@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
-import ProductGrid from './components/ProductGrid';
-import SavedItemsView from './components/SavedItemsView';
-import PriceHistoryModal from './components/PriceHistoryModal';
+import Sidebar from '../covered-product-saver/src/components/Sidebar';
+import Header from '../covered-product-saver/src/components/Header';
+import ProductGrid from '../covered-product-saver/src/components/ProductGrid';
+import SavedItemsView from '../covered-product-saver/src/components/SavedItemsView';
 import { mockProducts } from './mockProducts';
 import { Product, SavedProduct } from './types';
 
@@ -19,9 +18,6 @@ const App: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [alertsEmail, setAlertsEmail] = useState(true);
   const [alertsSms, setAlertsSms] = useState(false);
-  const [quantities, setQuantities] = useState<Record<number, number>>({});
-
-  const [historyProduct, setHistoryProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     try {
@@ -57,14 +53,6 @@ const App: React.FC = () => {
     });
   };
 
-  const handleQuantityChange = (product: Product, delta: number) => {
-    setQuantities((prev) => {
-      const current = prev[product.id] ?? 0;
-      const next = Math.max(0, current + delta);
-      return { ...prev, [product.id]: next };
-    });
-  };
-
   const filteredProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return mockProducts;
@@ -92,10 +80,7 @@ const App: React.FC = () => {
             <ProductGrid
               products={filteredProducts}
               savedIds={savedIds}
-              quantities={quantities}
               onSaveToggle={onSaveToggle}
-              onQuantityChange={handleQuantityChange}
-              onShowHistory={setHistoryProduct}
             />
           ) : (
             <SavedItemsView
@@ -112,13 +97,6 @@ const App: React.FC = () => {
           )}
         </main>
       </div>
-
-      {historyProduct && (
-        <PriceHistoryModal
-          product={historyProduct}
-          onClose={() => setHistoryProduct(null)}
-        />
-      )}
     </div>
   );
 };

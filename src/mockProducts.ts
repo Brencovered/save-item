@@ -5,14 +5,20 @@ export const mockProducts: Product[] = [
     id: 1,
     name: "Abbott's Bakery Rustic White Bread Sandwich Slice Loaf",
     size: '700g',
-    price: 5.2,
+    price: 5.2,               // current price
     category: 'Bakery',
     priceHistory: [
-      { date: '2025-10-14', price: 5.2 },
-      { date: '2025-10-21', price: 5.2 },
-      { date: '2025-11-10', price: 5.2 },
-      { date: '2025-11-12', price: 5.2 },
-      { date: '2025-11-26', price: 5.8 }
+      // roughly 2 months of weekly prices
+      { date: '2025-10-01', price: 5.20 },
+      { date: '2025-10-08', price: 5.20 },
+      { date: '2025-10-15', price: 4.90 }, // on special
+      { date: '2025-10-22', price: 4.90 },
+      { date: '2025-10-29', price: 5.20 }, // back to normal
+      { date: '2025-11-05', price: 5.20 },
+      { date: '2025-11-12', price: 5.50 }, // slight rise
+      { date: '2025-11-19', price: 5.50 },
+      { date: '2025-11-26', price: 5.20 }, // down again
+      { date: '2025-12-03', price: 5.20 }  // “this week”
     ]
   },
   {
@@ -20,9 +26,21 @@ export const mockProducts: Product[] = [
     name: "Abbott's Bakery Country Grains Sandwich Slice Bread Loaf",
     size: '800g',
     price: 5.2,
-    category: 'Bakery'
+    category: 'Bakery',
+    priceHistory: [
+      { date: '2025-10-01', price: 5.00 },
+      { date: '2025-10-08', price: 5.00 },
+      { date: '2025-10-15', price: 5.20 },
+      { date: '2025-10-22', price: 5.20 },
+      { date: '2025-10-29', price: 4.90 },
+      { date: '2025-11-05', price: 4.90 },
+      { date: '2025-11-12', price: 5.20 },
+      { date: '2025-11-19', price: 5.20 },
+      { date: '2025-11-26', price: 5.50 },
+      { date: '2025-12-03', price: 5.50 }
+    ]
   },
-  // ...rest unchanged
+  // ...rest of your mock products unchanged
 
 
   {

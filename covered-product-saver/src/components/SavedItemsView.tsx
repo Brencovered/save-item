@@ -1,7 +1,7 @@
 // src/components/SavedItemsView.tsx
 
 import React, { useMemo, useState } from 'react';
-import { PricePoint, SavedProduct } from '../types';
+import { PricePoint, SavedProduct } from '../../../src/types';
 
 interface SavedItemsViewProps {
   saved: SavedProduct[];

@@ -22,46 +22,60 @@ function computeStats(history: PricePoint[]) {
 }
 
 function predictNextDrop(history: PricePoint[], currentPrice: number): string {
-  if (history.length < 3) return 'Not enough history yet.';
+  if (history.length < 2) {
+    return 'Not enough history yet to estimate a change.';
+  }
 
   const sorted = [...history].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  const drops: number[] = [];
+  // Compute gaps only when the price actually changed
+  const gaps: number[] = [];
+  let lastChangeIndex = 0;
+
   for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i].price < sorted[i - 1].price) {
+    if (sorted[i].price !== sorted[i - 1].price) {
+      const prevChangeDate =
+        new Date(sorted[lastChangeIndex].date).getTime();
+      const thisChangeDate = new Date(sorted[i].date).getTime();
       const days =
-        (new Date(sorted[i].date).getTime() -
-          new Date(sorted[i - 1].date).getTime()) /
-        (1000 * 60 * 60 * 24);
-      drops.push(days);
+        (thisChangeDate - prevChangeDate) / (1000 * 60 * 60 * 24);
+      gaps.push(days);
+      lastChangeIndex = i;
     }
   }
 
-  const hasDrops = drops.length > 0;
-  const avgDropGap = hasDrops
-    ? drops.reduce((a, b) => a + b, 0) / drops.length
-    : null;
-
-  const { median } = computeStats(sorted);
-
-  if (currentPrice <= median) {
-    return 'Already at or below typical price.';
+  if (gaps.length === 0) {
+    return 'Price has been stable so far; no change pattern yet.';
   }
 
-  if (!avgDropGap) {
-    return 'Above typical price, but no clear drop pattern yet.';
+  const avgGap =
+    gaps.reduce((sum, d) => sum + d, 0) / gaps.length;
+
+  const lastChangeDate = new Date(sorted[lastChangeIndex].date);
+  const estimateDate = new Date(lastChangeDate);
+  estimateDate.setDate(
+    estimateDate.getDate() + Math.round(avgGap)
+  );
+
+  // You can keep this simple, or hint direction based on median
+  const prices = sorted.map((p) => p.price);
+  const median =
+    prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)];
+
+  let directionHint = '';
+  if (currentPrice > median) {
+    directionHint = ' (likely a drop)';
+  } else if (currentPrice < median) {
+    directionHint = ' (likely an increase)';
   }
 
-  const lastDate = sorted[sorted.length - 1].date;
-  const estimate = new Date(lastDate);
-  estimate.setDate(estimate.getDate() + Math.round(avgDropGap));
-
-  return `Likely to drop again in ~${Math.round(
-    avgDropGap
-  )} days (around ${estimate.toLocaleDateString()}).`;
+  return `Expected price change in ~${Math.round(
+    avgGap
+  )} days, around ${estimateDate.toLocaleDateString()}${directionHint}.`;
 }
+
 
 const SavedItemsView: React.FC<SavedItemsViewProps> = ({
   saved,

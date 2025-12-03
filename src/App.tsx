@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -87,6 +88,7 @@ const App: React.FC = () => {
             <ProductGrid
               products={filteredProducts}
               savedIds={savedIds}
+              quantities={quantities}
               onSaveToggle={onSaveToggle}
               onQuantityChange={handleQuantityChange}
               onShowHistory={() => {

@@ -55,34 +55,35 @@ const ProductCard: React.FC<ProductCardProps> = ({
       <div className="card-name">{product.name}</div>
       <div className="card-size">{product.size}</div>
 
+      {/* price + save in one row */}
       <div className="card-footer">
         <div>
           <div className="card-price">${product.price.toFixed(2)}</div>
           <div className="card-category">{product.category}</div>
         </div>
 
-        <div className="card-footer-right">
-          <button
-            className="qty-btn qty-minus"
-            onClick={handleMinus}
-            disabled={quantity <= 0}
-          >
-            –
-          </button>
-          <span className="qty-value">{quantity}</span>
-          <button className="qty-btn qty-plus" onClick={handlePlus}>
-            +
-          </button>
-        </div>
+        <button
+          className={'save-button ' + (isSaved ? 'saved' : '')}
+          onClick={() => onSaveToggle(product)}
+        >
+          {isSaved ? 'Saved' : 'Save'}
+        </button>
       </div>
 
-      <button
-        className={'save-button ' + (isSaved ? 'saved' : '')}
-        onClick={() => onSaveToggle(product)}
-        style={{ marginTop: 8, alignSelf: 'flex-end' }}
-      >
-        {isSaved ? 'Saved' : 'Save'}
-      </button>
+      {/* bottom quantity bar */}
+      <div className="card-qty-row">
+        <button
+          className="qty-btn qty-minus"
+          onClick={handleMinus}
+          disabled={quantity <= 0}
+        >
+          –
+        </button>
+        <span className="qty-value">{quantity}</span>
+        <button className="qty-btn qty-plus" onClick={handlePlus}>
+          +
+        </button>
+      </div>
     </div>
   );
 };

@@ -271,10 +271,32 @@ body {
   background: #f3f4f6;
 }
 
+.saved-item-history {
+  margin-top: 6px;
+}
+
 .saved-item-explanation {
-  margin-top: 4px;
   font-size: 12px;
   color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.sparkline {
+  margin-bottom: 4px;
+}
+
+.saved-item-history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.saved-item-history-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
 }
 
 
